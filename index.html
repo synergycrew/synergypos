@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#f4f5ef">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <title>Synergy POS</title>
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" href="./icons/synergy-pos.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="./icons/synergy-pos-192.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="pos-ui.css">
+  <link rel="stylesheet" href="receipt-print.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+  <script src="supabase-config.js" defer></script>
+  <script src="app.js" defer></script>
+  <script src="https://unpkg.com/lucide@latest" defer></script>
+</head>
+<body>
+  <section class="login-screen" id="login-screen">
+    <aside class="login-story">
+      <a class="brand brand-light" href="#login"><span class="brand-mark"><i class="brand-fallback" data-lucide="chef-hat"></i><img class="company-logo" alt="Company logo" hidden></span><span><strong id="login-company-name">Synergy</strong><small>RESTAURANT POS</small></span></a>
+      <div class="story-copy"><span class="eyebrow">THE DINING ROOM, IN SYNC</span><h1>Good service<br>starts here.</h1><p>One clear view for the floor, the pass, and the counter.</p></div>
+      <div class="story-foot"><span class="live-dot"></span> Service workspace <span>·</span> Local demo</div>
+    </aside>
+    <main class="login-main">
+      <form class="login-card" id="login-form">
+        <span class="eyebrow">TEAM SIGN IN</span><h2>Welcome back.</h2><p class="login-intro">Choose your station and enter your staff PIN.</p>
+        <fieldset class="role-picker"><legend>Your station</legend>
+          <label class="role-option"><input type="radio" name="role" value="waiter" checked><span class="role-icon"><i data-lucide="concierge-bell"></i></span><span><strong>Waiter</strong><small>Tables & orders</small></span><i class="role-check" data-lucide="circle-check"></i></label>
+          <label class="role-option"><input type="radio" name="role" value="kitchen"><span class="role-icon"><i data-lucide="utensils"></i></span><span><strong>Kitchen</strong><small>Prep & tickets</small></span><i class="role-check" data-lucide="circle-check"></i></label>
+          <label class="role-option"><input type="radio" name="role" value="admin"><span class="role-icon"><i data-lucide="shield-check"></i></span><span><strong>Administrator</strong><small>Manage the whole restaurant</small></span><i class="role-check" data-lucide="circle-check"></i></label>
+        </fieldset>
+        <label class="field-label" for="staff-name">Staff name</label><select class="text-field" id="staff-name" required></select>
+        <label class="field-label" for="staff-pin">Staff PIN</label><input class="text-field" id="staff-pin" type="password" inputmode="text" maxlength="32" placeholder="Enter PIN" required>
+        <button class="primary-button login-submit" type="submit">Sign in <i data-lucide="arrow-right"></i></button>
+        <button class="outline-button install-app-button" id="install-app" type="button"><i data-lucide="download"></i> Install on this device</button>
+        <p class="demo-credentials">Initial PINs: Waiter <b>1234</b> · Kitchen <b>2345</b> · Administrator <b>synergy2026</b></p>
+        <p class="login-error" id="login-error" role="alert" hidden>That station is disabled or the PIN is incorrect.</p>
+      </form>
+    </main>
+  </section>
+
+  <div class="app-shell" id="app-shell" hidden>
+    <aside class="sidebar">
+      <a class="brand" href="#home"><span class="brand-mark"><i class="brand-fallback" data-lucide="chef-hat"></i><img class="company-logo" alt="Company logo" hidden></span><span><strong id="sidebar-company-name">Synergy</strong><small>RESTAURANT POS</small></span></a>
+      <div class="nav-label">SERVICE</div>
+      <nav class="main-nav" id="main-nav" aria-label="Main navigation"></nav>
+      <div class="sidebar-bottom"><div class="store-card"><span class="store-avatar"><i data-lucide="store"></i></span><div><strong id="store-company-name">Synergy</strong><small>Downtown · Main floor</small></div></div><button class="user-card" id="logout-button" type="button" aria-label="Switch station" title="Switch station · enter the other station's PIN"><span class="user-avatar" id="user-avatar">A</span><span class="user-copy"><strong id="user-name">Alex</strong><small id="user-role">Waiter</small></span><i data-lucide="repeat-2"></i></button></div>
+    </aside>
+    <main class="main-area">
+      <header class="topbar"><div class="breadcrumbs"><span id="breadcrumb-company-name">Synergy</span><i data-lucide="chevron-right"></i><strong id="page-title">Floor</strong></div><div class="topbar-right"><span class="open-indicator"><span></span> Service open</span><span class="topbar-divider"></span><span id="today-date"></span><button class="outline-button switch-station-button" id="switch-station" type="button" aria-label="Switch station" title="Choose a different station and enter its PIN"><i data-lucide="repeat-2"></i><span>Switch station</span></button><button class="icon-button" id="print-receipt" aria-label="Print last receipt" title="Print last receipt"><i data-lucide="printer"></i></button></div></header>
+
+      <section class="view active" id="waiter-view">
+        <div class="page-heading"><div><div class="eyebrow" id="waiter-date-label">FLOOR SERVICE</div><h1>Table service<span class="heading-dot">.</span></h1><p>Choose a table, build the order, and send it to the kitchen.</p></div><div class="heading-status"><span class="live-dot"></span> <span id="open-table-count">0 tables in service</span></div></div>
+        <div class="waiter-layout">
+          <section class="floor-panel"><div class="section-head"><div><span class="section-kicker">DINING ROOM</span><h2>Tables</h2></div><div class="table-legend"><span><i class="legend-dot available"></i>Available</span><span><i class="legend-dot occupied"></i>In service</span></div></div><div class="table-grid" id="tables-grid"></div>
+            <div class="menu-panel"><div class="section-head menu-head"><div><span class="section-kicker">MENU</span><h2>Add to table</h2></div><label class="search-box"><i data-lucide="search"></i><input id="waiter-search" type="search" placeholder="Search dishes"></label></div><div class="category-row" id="waiter-categories"></div><div class="menu-grid" id="waiter-menu-grid"></div></div>
+          </section>
+          <aside class="ticket-panel"><div class="ticket-panel-head"><div><span class="section-kicker">ACTIVE TABLE</span><h2 id="selected-table-title">Choose a table</h2></div><button class="icon-button" id="clear-waiter-draft" aria-label="Clear unsent items" title="Clear unsent items"><i data-lucide="rotate-ccw"></i></button></div><label class="inline-field">Guests <select id="guest-count"><option>1</option><option selected>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option><option>8</option></select><span class="ticket-order-ref" id="table-order-ref"></span></label><div class="ticket-lines" id="waiter-ticket-lines"></div><div class="ticket-totals" id="waiter-totals"></div><div class="ticket-actions"><button class="secondary-button" id="request-bill" disabled><i data-lucide="receipt-text"></i> Request bill</button><button class="primary-button" id="send-kitchen" disabled>Send to kitchen <i data-lucide="send"></i></button><button class="text-button" id="mark-served" hidden><i data-lucide="check"></i> Mark as served</button></div></aside>
+        </div>
+      </section>
+
+      <section class="view secondary-view" id="kitchen-view"><div class="page-heading"><div><div class="eyebrow">KITCHEN DISPLAY</div><h1>On the pass<span class="heading-dot">.</span></h1><p>Live tickets sent from the floor and counter.</p></div><span class="queue-count" id="kitchen-count">0 active tickets</span></div><div class="kitchen-toolbar"><div class="kitchen-filters" id="kitchen-filters"><button class="filter-chip active" data-kitchen-filter="active">Active</button><button class="filter-chip" data-kitchen-filter="ready">Ready</button><button class="filter-chip" data-kitchen-filter="all">All today</button></div><span class="refresh-note"><i data-lucide="radio"></i> Updates on this device</span></div><div class="kitchen-grid" id="kitchen-grid"></div></section>
+
+      <section class="view" id="counter-view"><div class="page-heading"><div><div class="eyebrow">COUNTER & TAKEAWAY</div><h1>Quick sale<span class="heading-dot">.</span></h1><p>Build a walk-in order or settle a table bill.</p></div><button class="outline-button" data-open-view="sales"><i data-lucide="chart-no-axes-column"></i> Sales</button></div><div class="counter-layout"><section class="counter-catalog"><div class="catalog-tools"><label class="search-box"><i data-lucide="search"></i><input id="counter-search" type="search" placeholder="Search menu"></label></div><div class="category-row" id="counter-categories"></div><div class="menu-grid" id="counter-menu-grid"></div></section><aside class="ticket-panel counter-ticket"><div class="ticket-panel-head"><div><span class="section-kicker">NEW ORDER</span><h2>Walk-in</h2></div><button class="icon-button" id="clear-counter-draft" aria-label="Clear order"><i data-lucide="rotate-ccw"></i></button></div><label class="inline-field">Order type <select id="counter-order-type"><option value="Takeaway">Takeaway</option><option value="Dine-in">Dine-in</option></select><span></span></label><div class="ticket-lines" id="counter-ticket-lines"></div><div class="ticket-totals" id="counter-totals"></div><button class="primary-button counter-pay" id="counter-checkout" disabled>Take payment <i data-lucide="arrow-right"></i></button></aside></div><section class="bill-queue"><div class="section-head"><div><span class="section-kicker">TABLE PAYMENTS</span><h2>Bills to settle</h2></div><span class="queue-count" id="bill-count">0 waiting</span></div><div class="bill-list" id="bill-list"></div></section></section>
+
+      <section class="view secondary-view" id="sales-view"><div class="page-heading"><div><div class="eyebrow">END OF SHIFT</div><h1>Sales & checks<span class="heading-dot">.</span></h1><p>Paid checks and open tabs from this device.</p></div><button class="outline-button" id="export-orders"><i data-lucide="download"></i> Export CSV</button></div><div class="sales-summary" id="sales-summary"></div><div class="table-wrap"><table><thead><tr><th>CHECK</th><th>TIME</th><th>TYPE</th><th>ITEMS</th><th>PAYMENT</th><th class="align-right">TOTAL</th></tr></thead><tbody id="sales-table"></tbody></table><div class="empty-state" id="sales-empty" hidden><i data-lucide="receipt-text"></i><strong>No checks yet</strong><span>Completed payments will appear here.</span></div></div></section>
+
+      <section class="view secondary-view" id="inventory-view"><div class="page-heading"><div><div class="eyebrow">STOCK CONTROL</div><h1>Menu & stock<span class="heading-dot">.</span></h1><p>Track availability and adjust counts for today's service.</p></div><button class="outline-button" id="add-menu-item"><i data-lucide="plus"></i> Add menu item</button></div><div class="inventory-summary" id="inventory-summary"></div><div class="table-wrap"><table><thead><tr><th>ITEM</th><th>CATEGORY</th><th>STATION</th><th>AVAILABLE</th><th class="align-right">PRICE</th><th></th></tr></thead><tbody id="inventory-table"></tbody></table></div></section>
+
+      <section class="view secondary-view" id="settings-view"><div class="page-heading"><div><div class="eyebrow">RESTAURANT PROFILE</div><h1>Settings<span class="heading-dot">.</span></h1><p>Manage staff, update the brand, and enable live sync.</p></div></div><section class="settings-form staff-management" id="staff-management" hidden><div class="eyebrow">TEAM ACCESS</div><h3>Waiter & kitchen staff</h3><p>Update station names and PINs, enable access, and review active sessions.</p><form id="staff-settings-form"><div class="staff-profile-columns"><section class="staff-profile-column"><header><strong>Waiter</strong><button class="outline-button" type="button" data-add-staff="waiter"><i data-lucide="plus"></i> Add waiter</button></header><div class="staff-account-list" id="waiter-staff-list"></div></section><section class="staff-profile-column"><header><strong>Kitchen</strong><button class="outline-button" type="button" data-add-staff="kitchen"><i data-lucide="plus"></i> Add kitchen staff</button></header><div class="staff-account-list" id="kitchen-staff-list"></div></section></div><div class="settings-actions"><button class="primary-button" type="submit">Save staff access <i data-lucide="check"></i></button></div></form><div class="staff-status-block"><div class="section-head"><div><span class="section-kicker">CURRENTLY SIGNED IN</span><h4>Active sessions</h4></div></div><div class="staff-session-list" id="staff-session-list"></div></div><div class="staff-status-block"><div class="section-head"><div><span class="section-kicker">ACCESS HISTORY</span><h4>Recent activity</h4></div></div><div class="staff-activity-list" id="staff-activity-list"></div></div></section><form class="settings-form" id="company-settings-form"><div class="settings-logo-row"><div class="settings-logo-preview" id="settings-logo-preview"><i data-lucide="chef-hat"></i></div><div><strong>Company logo</strong><small>PNG, JPG, or WebP · up to 1 MB</small><div class="settings-logo-actions"><label class="outline-button upload-logo">Choose image<input id="company-logo-file" type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" hidden></label><button class="text-button" id="remove-company-logo" type="button">Remove logo</button></div></div></div><label class="field-label settings-label" for="company-name-input">Restaurant / company name</label><input class="text-field" id="company-name-input" maxlength="48" required placeholder="Your restaurant name"><div class="settings-actions"><button class="primary-button" type="submit">Save changes <i data-lucide="check"></i></button><span class="settings-hint">Changes are saved on this device.</span></div></form><div class="settings-form settings-sync-block"><div class="eyebrow">LIVE DEVICE SYNC</div><h3>Supabase cloud sync</h3><p>Use this to share orders between waiter, kitchen, and admin phones/tablets.</p><p class="cloud-sync-status" id="cloud-sync-status" data-state="idle" role="status" aria-live="polite">Cloud sync is off. Enable it and save valid Supabase credentials to auto-save POS data.</p>
+      <label class="field-label" for="sync-url-input">Project URL</label>
+      <input class="text-field" id="sync-url-input" type="url" placeholder="https://your-project.supabase.co">
+      <label class="field-label" for="sync-key-input">Anon key</label>
+      <input class="text-field" id="sync-key-input" type="password" placeholder="Paste your anon key">
+      <label class="checkbox-row">
+      <input id="sync-enabled-input" type="checkbox"> Enable cross-device sync
+      </label>
+      <div class="settings-actions">
+      <button class="outline-button" id="save-sync-config" type="button">Save sync settings</button>
+      </div>
+      </div></section>
+    </main>
+  </div>
+
+  <div class="modal-backdrop" id="payment-modal" hidden><section class="payment-modal" role="dialog" aria-modal="true" aria-labelledby="payment-title"><button class="modal-close icon-button" data-close-payment aria-label="Close"><i data-lucide="x"></i></button><div class="modal-icon"><i data-lucide="credit-card"></i></div><div class="eyebrow">SETTLE CHECK</div><h2 id="payment-title">Take payment</h2><p class="modal-total" id="modal-total">$0.00</p><div class="payment-methods"><button class="payment-method selected" data-method="Card"><i data-lucide="credit-card"></i><span>Card</span><i class="method-check" data-lucide="circle-check"></i></button><button class="payment-method" data-method="Cash"><i data-lucide="banknote"></i><span>Cash</span><i class="method-check" data-lucide="circle-check"></i></button><button class="payment-method" data-method="Mobile pay"><i data-lucide="smartphone"></i><span>Mobile pay</span><i class="method-check" data-lucide="circle-check"></i></button></div><label class="cash-field" id="cash-field" hidden>Cash received<input id="cash-received" type="number" min="0" step="0.01" placeholder="0.00"></label><div class="change-line" id="change-line" hidden></div><button class="primary-button confirm-pay" id="confirm-payment">Complete payment <i data-lucide="arrow-right"></i></button><button class="text-button cancel-payment" data-close-payment>Back to order</button></section></div>
+  <div class="modal-backdrop" id="photo-modal" hidden><section class="photo-modal" role="dialog" aria-modal="true" aria-labelledby="photo-title"><button class="modal-close icon-button" id="close-photo-editor" aria-label="Close photo editor"><i data-lucide="x"></i></button><div class="eyebrow">MENU ITEM PHOTO</div><h2 id="photo-title">Edit photo</h2><div class="photo-preview" id="photo-preview"><span></span></div><label class="field-label" for="photo-url-input">Photo link</label><div class="photo-url-row"><input class="text-field" id="photo-url-input" type="url" placeholder="https://example.com/photo.jpg"><button class="outline-button" id="use-photo-url" type="button">Use link</button></div><label class="field-label" for="menu-photo-file">Or choose a photo from this device</label><input class="text-field file-field" id="menu-photo-file" type="file" accept="image/png,image/jpeg,image/webp"><div class="photo-editor-actions"><button class="text-button" id="remove-menu-photo" type="button">Remove photo</button><button class="primary-button" id="save-photo-editor" type="button">Save photo <i data-lucide="check"></i></button></div></section></div>
+  <div class="modal-backdrop" id="item-modal" hidden><form class="item-modal" id="item-edit-form" role="dialog" aria-modal="true" aria-labelledby="item-modal-title"><button class="modal-close icon-button" id="close-item-editor" type="button" aria-label="Close item editor"><i data-lucide="x"></i></button><div class="eyebrow">MENU MANAGEMENT</div><h2 id="item-modal-title">Edit menu item</h2><div class="item-edit-grid"><label class="field-label" for="item-name-input">Name<input class="text-field" id="item-name-input" name="name" maxlength="64" required></label><label class="field-label" for="item-category-input">Category<input class="text-field" id="item-category-input" name="category" maxlength="32" required></label><label class="field-label" for="item-station-input">Kitchen station<input class="text-field" id="item-station-input" name="station" maxlength="32" required></label><label class="field-label" for="item-price-input">Price<input class="text-field" id="item-price-input" name="price" type="number" min="0.01" step="0.01" required></label><label class="field-label" for="item-stock-input">Available portions<input class="text-field" id="item-stock-input" name="stock" type="number" min="0" step="1" required></label><label class="field-label" for="item-emoji-input">Menu icon<input class="text-field" id="item-emoji-input" name="emoji" maxlength="8"></label></div><div class="item-editor-actions"><button class="outline-button" id="edit-item-photo" type="button"><i data-lucide="image"></i> Edit photo</button><button class="primary-button" type="submit">Save item <i data-lucide="check"></i></button></div></form></div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <div class="print-receipt" id="receipt-print"></div>
+  <script>
+    if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+      window.addEventListener('load', () => navigator.serviceWorker.register('./service-worker.js').catch(error => console.warn('POS offline support unavailable:', error)));
+    }
+  </script>
+</body>
+</html>
